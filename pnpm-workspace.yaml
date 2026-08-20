@@ -2,6 +2,7 @@ packages:
   - 'packages/*'
 
 allowBuilds:
+  '@scarf/scarf': true
   '@swc/core': true
 
 catalog:
