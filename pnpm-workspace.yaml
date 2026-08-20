@@ -4,6 +4,7 @@ packages:
 allowBuilds:
   '@scarf/scarf': true
   '@swc/core': true
+  argon2: true
 
 catalog:
   typescript: ^6.0.3
