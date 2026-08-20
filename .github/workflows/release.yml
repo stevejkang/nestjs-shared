@@ -89,8 +89,8 @@ jobs:
         id: changesets
         uses: changesets/action@v2
         with:
-          version: pnpm changeset:version
-          publish: pnpm changeset:publish
+          version-script: pnpm changeset:version
+          publish-script: pnpm changeset:publish
           github-token: ${{ secrets.GITHUB_TOKEN }}
         env:
           NPM_CONFIG_PROVENANCE: true
