@@ -1,5 +1,6 @@
 {
   "name": "@stevejkang/nestjs-common",
+  "description": "Project-wide utilities for NestJS applications",
   "version": "0.0.0",
   "license": "MIT",
   "author": "stevejkang <iam@juneyoung.io>",

@@ -1,5 +1,6 @@
 {
   "name": "@stevejkang/nestjs-typeorm",
+  "description": "Custom column decorators and transformers for TypeORM",
   "version": "0.0.0",
   "license": "MIT",
   "author": "stevejkang <iam@juneyoung.io>",
