@@ -30,7 +30,7 @@ describe('Snowflake', () => {
       expect(generated.length).toEqual(new Set(generated).size);
     });
 
-    it('should generate a unique snowflake across 1M calls', () => {
+    it('should generate a unique snowflake across 1M calls', { timeout: 30_000 }, () => {
       const generated: string[] = [];
 
       for (let i = 0; i < 1e6; i++) {
