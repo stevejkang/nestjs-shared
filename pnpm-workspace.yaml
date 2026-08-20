@@ -19,7 +19,7 @@ catalog:
   tsdown: ^0.22.14
   turbo: ^2.10.9
   '@biomejs/biome': ^2.5.8
-  '@changesets/cli': ^3.0.0
+  '@changesets/cli': ^3.0.1
   vitest: ^4.1.10
   '@vitest/coverage-v8': ^4.1.10
   unplugin-swc: ^1.5.10

@@ -1,0 +1,124 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: Version bump type
+        required: true
+        type: choice
+        options:
+          - minor
+          - patch
+          - major
+        default: minor
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write
+
+jobs:
+  # Manual trigger: generate a changeset file, push to main, then
+  # fall through to the release job which creates the Version PR.
+  # GITHUB_TOKEN pushes do not re-trigger workflows, so the release
+  # job is chained via `needs` instead of relying on a second run.
+  prepare:
+    name: Prepare release
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Abort if changesets already pending
+        run: |
+          COUNT=$(find .changeset -name '*.md' ! -name 'README.md' 2>/dev/null | wc -l | tr -d ' ')
+          if [ "$COUNT" -gt 0 ]; then
+            echo "::error::There are already ${COUNT} pending changeset file(s). Merge or remove them first."
+            exit 1
+          fi
+
+      - name: Generate changeset and push
+        run: |
+          PKG=$(node -p "require(require('fs').readdirSync('packages').map(d => 'packages/'+d+'/package.json').find(f => require('fs').existsSync(f))).name")
+          TIMESTAMP=$(date +%s)
+          FILE=".changeset/release-${TIMESTAMP}.md"
+          printf -- "---\n'%s': %s\n---\n\nRelease\n" "${PKG}" "${{ inputs.bump }}" > "${FILE}"
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add "${FILE}"
+          git commit -m "Add changeset for ${{ inputs.bump }} release"
+          git push
+
+  release:
+    name: Release
+    needs: [prepare]
+    if: always() && (needs.prepare.result == 'success' || (needs.prepare.result == 'skipped' && github.event_name == 'push'))
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          ref: main
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        run: pnpm turbo build
+
+      - name: Create release PR or publish
+        id: changesets
+        uses: changesets/action@v2
+        with:
+          version: pnpm changeset:version
+          publish: pnpm changeset:publish
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+        env:
+          NPM_CONFIG_PROVENANCE: true
+
+      - name: Read lockstep version
+        if: steps.changesets.outputs.published == 'true'
+        id: version
+        run: |
+          VERSION=$(node -p "require(require('fs').readdirSync('packages').map(d=>'./packages/'+d+'/package.json').find(f=>require('fs').existsSync(f))).version")
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Create and push tag
+        if: steps.changesets.outputs.published == 'true'
+        run: |
+          git tag "v${{ steps.version.outputs.version }}"
+          git push origin "v${{ steps.version.outputs.version }}"
+
+      - name: Generate release notes with git-cliff
+        if: steps.changesets.outputs.published == 'true'
+        id: cliff
+        uses: orhun/git-cliff-action@v4
+        with:
+          config: cliff.toml
+          args: --latest --strip header
+
+      - name: Create GitHub Release
+        if: steps.changesets.outputs.published == 'true'
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          body: ${{ steps.cliff.outputs.content }}

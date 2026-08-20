@@ -6,7 +6,9 @@
       "!**/dist",
       "!**/node_modules",
       "!**/.turbo",
-      "!**/coverage"
+      "!**/coverage",
+      "!**/.omc",
+      "!**/.omo"
     ]
   },
   "formatter": {
