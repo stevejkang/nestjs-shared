@@ -90,7 +90,7 @@ jobs:
         run: |
           CHANGESETS=$(find .changeset -name '*.md' ! -name 'README.md' 2>/dev/null | wc -l | tr -d ' ')
           COMMIT_MSG=$(git log -1 --pretty=%s)
-          if [ "$CHANGESETS" -gt 0 ] || [ "$COMMIT_MSG" = "Version Packages" ]; then
+          if [ "$CHANGESETS" -gt 0 ] || [ "$COMMIT_MSG" = "Release" ]; then
             echo "run=true" >> "$GITHUB_OUTPUT"
           else
             echo "run=false" >> "$GITHUB_OUTPUT"
@@ -103,9 +103,28 @@ jobs:
         with:
           version-script: pnpm changeset:version
           publish-script: pnpm changeset:publish
+          commit-message: "Release"
+          pr-title: "Release"
           github-token: ${{ secrets.GITHUB_TOKEN }}
         env:
           NPM_CONFIG_PROVENANCE: true
+
+      - name: Rename release PR with version
+        if: steps.changesets.outputs.pullRequestNumber != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ steps.changesets.outputs.pullRequestNumber }}
+        run: |
+          VERSION=$(gh api \
+            "repos/${{ github.repository }}/contents/packages?ref=changeset-release/main" \
+            -q '.[0].name' \
+            | xargs -I{} gh api \
+              "repos/${{ github.repository }}/contents/packages/{}/package.json?ref=changeset-release/main" \
+              -H "Accept: application/vnd.github.raw" \
+            | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).version") || true
+          if [ -n "$VERSION" ]; then
+            gh pr edit "$PR_NUMBER" --title "Release v${VERSION}"
+          fi
 
       - name: Read lockstep version
         if: steps.changesets.outputs.published == 'true'
