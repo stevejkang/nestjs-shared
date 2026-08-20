@@ -85,7 +85,19 @@ jobs:
       - name: Build packages
         run: pnpm turbo build
 
+      - name: Check for pending changesets or version bump
+        id: should-release
+        run: |
+          CHANGESETS=$(find .changeset -name '*.md' ! -name 'README.md' 2>/dev/null | wc -l | tr -d ' ')
+          COMMIT_MSG=$(git log -1 --pretty=%s)
+          if [ "$CHANGESETS" -gt 0 ] || [ "$COMMIT_MSG" = "Version Packages" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Create release PR or publish
+        if: steps.should-release.outputs.run == 'true'
         id: changesets
         uses: changesets/action@v2
         with:
