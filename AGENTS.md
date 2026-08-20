@@ -8,6 +8,10 @@ This file provides guidance for AI agents (Claude Code, Codex, etc.) working in 
 
 - [Work Cycle Rules](#work-cycle-rules)
 - [Commit & PR Rules](#commit--pr-rules)
+- [Monorepo Structure](#monorepo-structure)
+- [Code Style Guidelines](#code-style-guidelines)
+- [Testing](#testing)
+- [Adding a New Package](#adding-a-new-package)
 
 ---
 
@@ -27,7 +31,7 @@ If a conversation or mid-task decision causes a direction change significant eno
 
 Before committing or opening a PR, verify the following:
 
-1. **Conventions followed** — all changes comply with the guidelines defined in this file
+1. **Conventions followed** — all changes comply with the guidelines defined in this file (Monorepo Structure, Code Style, Testing, etc.)
 2. **Tests added** — appropriate unit tests are written for new or changed logic
 3. **Commit discipline** — commits follow the rules in Commit & PR Rules (meaningful units, signed, proper messages)
 4. **CI expected to pass** — all checks that run in CI workflows (build, lint, typecheck, tests) pass locally before pushing
@@ -85,3 +89,60 @@ Remove unused Redis cache keys
 - **Always check for open PRs first** — before merging, check if there is an open PR on the upstream for the branch being merged.
 - **Local fast-forward merge + push** — if an open PR exists, do NOT merge via `gh pr merge` or GitHub MCP tools. Instead, perform a local fast-forward merge (`git merge --ff-only`) on the base branch and push. This closes the upstream PR naturally via push and preserves a clean linear history.
 - **Multiple branches → merge one at a time** — when merging several branches in sequence (e.g., `feature-a` → `develop` → `main`), do NOT merge all at once locally. Merge and push each base/destination pair sequentially so that each upstream PR is closed by the corresponding push. Merging everything locally before pushing leaves dangling open PRs on the upstream.
+
+---
+
+## Monorepo Structure
+
+This is a pnpm monorepo managed with Turborepo. All packages live under `packages/`.
+
+### Package Layout
+
+Use an existing package as the template for package layout and configuration.
+
+### Dependencies
+
+- **Workspace dependencies**: Use `workspace:^` for cross-package references (e.g., pipes → common). `pnpm pack` and `changeset publish` rewrite these to real semver ranges automatically.
+- **Peer dependencies**: Each package declares its runtime peers. All peers are mirrored in `devDependencies` using `catalog:` references.
+- **Catalog**: All shared dependency versions are pinned in `pnpm-workspace.yaml` `catalog:` section. New dependencies should be added to the catalog first.
+
+---
+
+## Code Style Guidelines
+
+### TypeScript
+
+- **Strict mode** — see `tsconfig.base.json` for the full set of compiler options
+- **No `any` type** — use `unknown` if type is truly unknown. Enforced by Biome `noExplicitAny: error`
+- **Explicit return types** for all functions/methods
+- Use `interface` for object contracts, `type` for unions/aliases
+- Use `enum` keyword for constants with semantic meaning
+- **`as any` / `@ts-ignore` / `@ts-expect-error` are banned** — never suppress type errors. If an external library has a type mismatch, fix the type or use `unknown` with proper narrowing.
+
+### Formatting
+
+Biome handles formatting and import organization. See `biome.json` for the full configuration. Do not add ESLint configs or `eslint-disable` comments. Use `biome-ignore` when suppression is genuinely necessary.
+
+---
+
+## Testing
+
+- **Framework**: Vitest with SWC plugin for decorator metadata support
+- **Test location**: `test/` directory only (never in `src/`). Enforced by `vitest.config.mts` include pattern: `test/**/*.spec.ts`
+- **Test files**: Named `{FileName}.spec.ts`
+- Use `describe()` blocks for grouping, `it()` for individual cases
+- No Jest APIs — this repo uses Vitest exclusively
+
+### Pre-Commit Verification
+
+Before every commit: `pnpm turbo build lint typecheck test` must pass repo-wide.
+
+---
+
+## Adding a New Package
+
+1. Copy an existing package as the template and adapt its source, tests, exports, metadata, and dependencies.
+2. Keep test files under `test/` and export all consumer-facing values and types from `src/index.ts`.
+3. Add peer dependencies and mirror them in `devDependencies` with `catalog:`.
+4. Keep the package README and `package.json` description aligned.
+5. Run `pnpm install` then `pnpm turbo build lint typecheck test`.
