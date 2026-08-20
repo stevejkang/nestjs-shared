@@ -1,0 +1,63 @@
+{
+  "name": "@stevejkang/nestjs-pipes",
+  "version": "0.0.0",
+  "license": "MIT",
+  "author": "stevejkang <iam@juneyoung.io>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stevejkang/nestjs-shared.git",
+    "directory": "packages/pipes"
+  },
+  "homepage": "https://github.com/stevejkang/nestjs-shared#readme",
+  "bugs": "https://github.com/stevejkang/nestjs-shared/issues",
+  "publishConfig": {
+    "access": "public"
+  },
+  "sideEffects": false,
+  "files": [
+    "dist",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.cts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@stevejkang/nestjs-common": "workspace:^"
+  },
+  "peerDependencies": {
+    "@nestjs/common": "^11.0.0",
+    "class-validator": "^0.15.0",
+    "reflect-metadata": "^0.2.0"
+  },
+  "devDependencies": {
+    "@nestjs/common": "catalog:",
+    "@swc/core": "catalog:",
+    "@types/node": "catalog:",
+    "class-validator": "catalog:",
+    "reflect-metadata": "catalog:",
+    "tsdown": "catalog:",
+    "typescript": "catalog:",
+    "unplugin-swc": "catalog:",
+    "vitest": "catalog:"
+  }
+}
