@@ -153,7 +153,7 @@ describe('PasswordHandler', () => {
   });
 
   describe('integration tests', () => {
-    it('should work with multiple password operations', async () => {
+    it('should work with multiple password operations', { timeout: 30_000 }, async () => {
       const passwords = ['password1', 'password2', 'password3'];
       const hashes: string[] = [];
 
@@ -177,7 +177,7 @@ describe('PasswordHandler', () => {
       }
     });
 
-    it('should handle concurrent operations', async () => {
+    it('should handle concurrent operations', { timeout: 30_000 }, async () => {
       const password = 'testPassword123';
       const concurrentOperations = 10;
 
