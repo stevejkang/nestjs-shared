@@ -1,0 +1,53 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "timezone": "Asia/Seoul",
+  "schedule": ["* * * * *"],
+  "prHourlyLimit": 2,
+  "prConcurrentLimit": 10,
+  "rangeStrategy": "bump",
+  "minimumReleaseAge": "7 days",
+  "labels": ["dependencies"],
+  "major": {
+    "dependencyDashboardApproval": true
+  },
+  "baseBranchPatterns": ["main"],
+  "vulnerabilityAlerts": {
+    "enabled": true
+  },
+  "reviewers": ["stevejkang"],
+  "packageRules": [
+    {
+      "description": "Allow major updates for GitHub Actions without approval",
+      "matchManagers": ["github-actions"],
+      "major": {
+        "dependencyDashboardApproval": false
+      }
+    },
+    {
+      "description": "Group NestJS packages",
+      "matchPackageNames": ["@nestjs/**"],
+      "groupName": "NestJS dependencies"
+    },
+    {
+      "description": "Group Vitest packages",
+      "matchPackageNames": ["vitest", "@vitest/**"],
+      "groupName": "Vitest dependencies"
+    },
+    {
+      "description": "Group build tooling",
+      "matchPackageNames": ["tsdown", "turbo", "@biomejs/biome", "@swc/core", "unplugin-swc"],
+      "groupName": "build tooling dependencies"
+    },
+    {
+      "description": "Disable peerDependencies (manually managed)",
+      "matchDepTypes": ["peerDependencies"],
+      "enabled": false
+    }
+  ],
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 8am on monday"]
+  },
+  "postUpdateOptions": ["pnpmDedupe"]
+}
