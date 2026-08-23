@@ -1,7 +1,7 @@
 {
   "name": "@stevejkang/nestjs-pipes",
   "description": "Validation and transformation pipes for NestJS applications",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "license": "MIT",
   "author": "stevejkang <iam@juneyoung.io>",
   "repository": {
