@@ -1,9 +1,6 @@
 name: Release
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
     inputs:
       bump:
@@ -23,51 +20,15 @@ concurrency:
 permissions:
   contents: write
   pull-requests: write
-  id-token: write
 
 jobs:
-  # Manual trigger: generate a changeset file, push to main, then
-  # fall through to the release job which creates the Version PR.
-  # GITHUB_TOKEN pushes do not re-trigger workflows, so the release
-  # job is chained via `needs` instead of relying on a second run.
-  prepare:
-    name: Prepare release
-    if: github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-
-      - name: Abort if changesets already pending
-        run: |
-          COUNT=$(find .changeset -name '*.md' ! -name 'README.md' 2>/dev/null | wc -l | tr -d ' ')
-          if [ "$COUNT" -gt 0 ]; then
-            echo "::error::There are already ${COUNT} pending changeset file(s). Merge or remove them first."
-            exit 1
-          fi
-
-      - name: Generate changeset and push
-        run: |
-          PKG=$(node -p "require(require('fs').readdirSync('packages').map(d => './packages/'+d+'/package.json').find(f => require('fs').existsSync(f))).name")
-          TIMESTAMP=$(date +%s)
-          FILE=".changeset/release-${TIMESTAMP}.md"
-          printf -- "---\n'%s': %s\n---\n\nRelease\n" "${PKG}" "${{ inputs.bump }}" > "${FILE}"
-          git config user.name 'github-actions[bot]'
-          git config user.email 'github-actions[bot]@users.noreply.github.com'
-          git add "${FILE}"
-          git commit -m "Add changeset for ${{ inputs.bump }} release"
-          git push
-
-  release:
-    name: Release
-    needs: [prepare]
-    if: always() && (needs.prepare.result == 'success' || (needs.prepare.result == 'skipped' && github.event_name == 'push'))
+  release-pr:
+    name: Create release PR
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v7
         with:
-          fetch-depth: 0
           ref: main
 
       - name: Install pnpm
@@ -82,75 +43,23 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build packages
-        run: pnpm turbo build
-
-      - name: Check for pending changesets or version bump
-        id: should-release
-        run: |
-          CHANGESETS=$(find .changeset -name '*.md' ! -name 'README.md' 2>/dev/null | wc -l | tr -d ' ')
-          COMMIT_MSG=$(git log -1 --pretty=%s)
-          if [ "$CHANGESETS" -gt 0 ] || [ "$COMMIT_MSG" = "Release" ]; then
-            echo "run=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "run=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Create release PR or publish
-        if: steps.should-release.outputs.run == 'true'
-        id: changesets
-        uses: changesets/action@v2
-        with:
-          version-script: pnpm changeset:version
-          publish-script: pnpm changeset:publish
-          commit-message: "Release"
-          pr-title: "Release"
-          create-github-releases: false
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-        env:
-          NPM_CONFIG_PROVENANCE: true
-
-      - name: Rename release PR with version
-        if: steps.changesets.outputs.pullRequestNumber != ''
+      - name: Create or update release PR
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_NUMBER: ${{ steps.changesets.outputs.pullRequestNumber }}
         run: |
-          VERSION=$(gh api \
-            "repos/${{ github.repository }}/contents/packages?ref=changeset-release/main" \
-            -q '.[0].name' \
-            | xargs -I{} gh api \
-              "repos/${{ github.repository }}/contents/packages/{}/package.json?ref=changeset-release/main" \
-              -H "Accept: application/vnd.github.raw" \
-            | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).version") || true
-          if [ -n "$VERSION" ]; then
-            gh pr edit "$PR_NUMBER" --title "Release v${VERSION}"
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git checkout -B changeset-release/main
+          PKG=$(node -p "require(require('fs').readdirSync('packages').map(d => './packages/'+d+'/package.json').find(f => require('fs').existsSync(f))).name")
+          printf -- "---\n'%s': %s\n---\n\nRelease\n" "${PKG}" "${{ inputs.bump }}" > .changeset/release.md
+          pnpm changeset:version
+          VERSION=$(node -p "require(require('fs').readdirSync('packages').map(d => './packages/'+d+'/package.json').find(f => require('fs').existsSync(f))).version")
+          git add -A
+          git commit -m "Release"
+          git push --force origin changeset-release/main
+          EXISTING_PR=$(gh pr list --base main --head changeset-release/main --state open --json number -q '.[0].number')
+          if [ -n "$EXISTING_PR" ]; then
+            gh pr edit "$EXISTING_PR" --title "Release v${VERSION}"
+          else
+            gh pr create --base main --head changeset-release/main --title "Release v${VERSION}" --body "Automated lockstep version bump. Merging this PR publishes all packages to npm."
           fi
-
-      - name: Read lockstep version
-        if: steps.changesets.outputs.published == 'true'
-        id: version
-        run: |
-          VERSION=$(node -p "require(require('fs').readdirSync('packages').map(d=>'./packages/'+d+'/package.json').find(f=>require('fs').existsSync(f))).version")
-          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-
-      - name: Create and push tag
-        if: steps.changesets.outputs.published == 'true'
-        run: |
-          git tag "v${{ steps.version.outputs.version }}"
-          git push origin "v${{ steps.version.outputs.version }}"
-
-      - name: Generate release notes with git-cliff
-        if: steps.changesets.outputs.published == 'true'
-        id: cliff
-        uses: orhun/git-cliff-action@v4
-        with:
-          config: cliff.toml
-          args: --latest --strip header
-
-      - name: Create GitHub Release
-        if: steps.changesets.outputs.published == 'true'
-        uses: softprops/action-gh-release@v3
-        with:
-          tag_name: v${{ steps.version.outputs.version }}
-          body: ${{ steps.cliff.outputs.content }}
