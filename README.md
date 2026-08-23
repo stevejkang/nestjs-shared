@@ -4,13 +4,13 @@ Production-ready shared libraries for building NestJS applications, powering [ne
 
 ## Packages
 
-| Package | Description |
-|---------|-------------|
-| [@stevejkang/nestjs-common](./packages/common) | Project-wide utilities |
-| [@stevejkang/nestjs-core](./packages/core) | Domain, application, and presentation building blocks |
-| [@stevejkang/nestjs-security](./packages/security) | Cryptography and password hashing |
-| [@stevejkang/nestjs-pipes](./packages/pipes) | Validation and transformation pipes |
-| [@stevejkang/nestjs-typeorm](./packages/typeorm) | Custom column decorators and transformers |
+| Package | Version | Description |
+|---------|---------|-------------|
+| [@stevejkang/nestjs-common](./packages/common) | ![NPM Version](https://img.shields.io/npm/v/%40stevejkang%2Fnestjs-common) | Project-wide utilities |
+| [@stevejkang/nestjs-core](./packages/core) | ![NPM Version](https://img.shields.io/npm/v/%40stevejkang%2Fnestjs-core) | Domain, application, and presentation building blocks |
+| [@stevejkang/nestjs-security](./packages/security) | ![NPM Version](https://img.shields.io/npm/v/%40stevejkang%2Fnestjs-security) | Cryptography and password hashing |
+| [@stevejkang/nestjs-pipes](./packages/pipes) | ![NPM Version](https://img.shields.io/npm/v/%40stevejkang%2Fnestjs-pipes) | Validation and transformation pipes |
+| [@stevejkang/nestjs-typeorm](./packages/typeorm) | ![NPM Version](https://img.shields.io/npm/v/%40stevejkang%2Fnestjs-typeorm) | Custom column decorators and transformers |
 
 ## Development
 

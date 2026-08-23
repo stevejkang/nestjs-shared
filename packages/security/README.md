@@ -1,5 +1,7 @@
 # @stevejkang/nestjs-security
 
+![NPM Version](https://img.shields.io/npm/v/%40stevejkang%2Fnestjs-security)
+
 Cryptography and password hashing for NestJS applications.
 
 ## Install

@@ -1,5 +1,7 @@
 # @stevejkang/nestjs-pipes
 
+![NPM Version](https://img.shields.io/npm/v/%40stevejkang%2Fnestjs-pipes)
+
 Validation and transformation pipes for NestJS applications.
 
 ## Install

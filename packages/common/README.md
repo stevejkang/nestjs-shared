@@ -1,5 +1,7 @@
 # @stevejkang/nestjs-common
 
+![NPM Version](https://img.shields.io/npm/v/%40stevejkang%2Fnestjs-common)
+
 Project-wide utilities for NestJS applications.
 
 ## Install

@@ -1,5 +1,7 @@
 # @stevejkang/nestjs-typeorm
 
+![NPM Version](https://img.shields.io/npm/v/%40stevejkang%2Fnestjs-typeorm)
+
 Custom column decorators and transformers for TypeORM.
 
 ## Install

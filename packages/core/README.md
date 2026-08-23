@@ -1,5 +1,7 @@
 # @stevejkang/nestjs-core
 
+![NPM Version](https://img.shields.io/npm/v/%40stevejkang%2Fnestjs-core)
+
 Domain, application, and presentation building blocks for NestJS applications.
 
 ## Install
