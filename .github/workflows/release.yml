@@ -48,7 +48,7 @@ jobs:
 
       - name: Generate changeset and push
         run: |
-          PKG=$(node -p "require(require('fs').readdirSync('packages').map(d => 'packages/'+d+'/package.json').find(f => require('fs').existsSync(f))).name")
+          PKG=$(node -p "require(require('fs').readdirSync('packages').map(d => './packages/'+d+'/package.json').find(f => require('fs').existsSync(f))).name")
           TIMESTAMP=$(date +%s)
           FILE=".changeset/release-${TIMESTAMP}.md"
           printf -- "---\n'%s': %s\n---\n\nRelease\n" "${PKG}" "${{ inputs.bump }}" > "${FILE}"
