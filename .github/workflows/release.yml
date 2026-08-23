@@ -55,7 +55,7 @@ jobs:
           pnpm changeset:version
           VERSION=$(node -p "require(require('fs').readdirSync('packages').map(d => './packages/'+d+'/package.json').find(f => require('fs').existsSync(f))).version")
           git add -A
-          git commit -m "Release"
+          git commit -m "Release v${VERSION}"
           git push --force origin changeset-release/main
           EXISTING_PR=$(gh pr list --base main --head changeset-release/main --state open --json number -q '.[0].number')
           if [ -n "$EXISTING_PR" ]; then
